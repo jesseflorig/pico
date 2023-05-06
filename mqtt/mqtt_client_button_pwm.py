@@ -6,8 +6,9 @@ import network
 import time
 import json
 
-
-LED = Pin(25, Pin.OUT)
+STATUS_LED = Pin(25, Pin.OUT)
+LED = Pin(0, Pin.OUT)
+BUTTON = Pin(1, Pin.IN)
 
 # ETHERNET
 MOSI = Pin(19)
@@ -238,16 +239,17 @@ class MQTTClient:
         return self.wait_msg()
 
 def eth_init():
+    STATUS_LED.value(0) # Start with Status LED off
     spi = SPI(0, 2_000_000, mosi=MOSI, miso=MISO, sck=SCK)
     nic = network.WIZNET5K(spi, CS, RESET)
     nic.active(True)
-    #nic.ifconfig((PICO_IP, '255.255.255.0', GATEWAY, '8.8.8.8'))
     while not nic.isconnected():
+        STATUS_LED.value(0) # Blink if still connecting
         time.sleep(1)
+        STATUS_LED.value(1)
         print('Connecting...')
     local_ip = nic.ifconfig()[0]
     print(f'Connected as {local_ip}!')
-    LED.value(1)
     
 def handle_message(topic,msg):
     print((topic, msg))
@@ -256,8 +258,9 @@ def handle_message(topic,msg):
     val = json.loads(msg)['on']
     LED.value(val)
     
-def handle_button(pin):
-    print(pin)
+def button_handler(pin):
+    print('button pressed')
+    LED.toggle()
     
 def mqtt_connect():
     client = MQTTClient(CLIENT_ID, MQTT_URI, user=MQTT_USER, password=MQTT_PASS, keepalive=60000)
@@ -283,14 +286,14 @@ def main():
         reconnect()
     
     # Setup button interrupt
-    button = Pin(0, Pin.IN, Pin.PULL_UP)
-    button.irq(trigger=Pin.IRQ_FALLING, handler=handle_button)
+    BUTTON.irq(trigger=Pin.IRQ_RISING, handler=button_handler)
     
     while True:
         try:
             client.check_msg()
         except OSError as e:
             reconnect()
+            
         #msg = json.dumps({ 'on': LED.value() })
         #client.publish(TOPIC, msg)
         #time.sleep(5)
