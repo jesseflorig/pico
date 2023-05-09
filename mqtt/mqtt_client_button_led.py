@@ -1,5 +1,5 @@
 from machine import Pin, SPI
-from mqtt import MQTTClient
+from mqtt import MQTTClient, MQTTException
 import network
 import time
 import json
@@ -20,7 +20,12 @@ MQTT_URI = '192.169.1.211'
 CLIENT_ID = 'Pico'
 MQTT_USER = 'pico'
 MQTT_PASS = 'password'
-TOPICS = [
+
+STATUS_TOPIC = b'pico/status'
+CONNECT_MSG = b'{"connected": 1}'
+DISCONNECT_MSG = b'{"connected": 0}'
+
+SUB_TOPICS = [
     'pico/light/',
     'pico/light2/'
     ]
@@ -29,12 +34,13 @@ def eth_init():
     spi = SPI(0, 2_000_000, mosi=MOSI, miso=MISO, sck=SCK)
     nic = network.WIZNET5K(spi, CS, RESET)
     nic.active(True)
+    print(f'Connecting...')
+    
     while not nic.isconnected():
         time.sleep(1)
-        print('Connecting...')
     
     local_ip = nic.ifconfig()[0]
-    print(f'Connected as {local_ip}!')
+    print(f'Joined network as {local_ip}!')
     LED.value(1)
     
 def handle_message(topic,msg):
@@ -53,13 +59,19 @@ def handle_message(topic,msg):
     
 def mqtt_connect():
     client = MQTTClient(CLIENT_ID, MQTT_URI, user=MQTT_USER, password=MQTT_PASS, keepalive=60000)
-    client.connect()
-    print(f'Connected to MQTT broker @ {MQTT_URI}!')
+    client.set_last_will(STATUS_TOPIC, DISCONNECT_MSG)
+    
+    try:
+        client.connect()
+    except MQTTException as e:
+        print(e)
+    else:
+        print(f'Connected to MQTT broker @ {MQTT_URI}!')
     
     client.set_callback(handle_message)
     
-    for topic in TOPICS:
-        print(f'Subscribing to {topic}...')
+    for topic in SUB_TOPICS:
+        print(f'Subscribed to {topic}...')
         client.subscribe(topic)
     
     return client
@@ -76,14 +88,22 @@ def main():
         client = mqtt_connect()
     except OSError as e:
         reconnect()
+    else:
+        client.publish(STATUS_TOPIC, CONNECT_MSG)
         
     def handle_button(pin):
-        DEBOUNCE_INTERVAL = 500
+        DEBOUNCE_INTERVAL = 1000
         last_debounce = 0
         
         if ((pin.value() is 0) and (time.ticks_ms()-last_debounce) > DEBOUNCE_INTERVAL):
             print('Button pressed!')
-            client.publish(b'pico/button', b'{"press": 1}')
+            EXT_LED.toggle()
+            
+            if EXT_LED.value() is 0:
+                client.publish(b'pico/light2/', b'{"on": 0}')
+            else:
+                client.publish(b'pico/light2/', b'{"on": 1}')
+            
             last_debounce=time.ticks_ms()
     
     # Setup button interrupt

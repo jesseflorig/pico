@@ -19,9 +19,13 @@ MQTT_URI = '192.169.1.211'
 CLIENT_ID = 'Pico'
 MQTT_USER = 'pico'
 MQTT_PASS = 'password'
-TOPICS = [
-    'pico/light/',
-    'test/'
+
+STATUS_TOPIC = b'pico/status'
+CONNECT_MSG = b'{"connected": 1}'
+DISCONNECT_MSG = b'{"connected": 0}'
+
+SUB_TOPICS = [
+    'pico/light/'
     ]
 
 def eth_init():
@@ -33,7 +37,7 @@ def eth_init():
         print('Connecting...')
     
     local_ip = nic.ifconfig()[0]
-    print(f'Connected as {local_ip}!')
+    print(f'Joined network as {local_ip}!')
     LED.value(1)
     
 def handle_message(topic,msg):
@@ -51,13 +55,19 @@ def handle_button(pin):
     
 def mqtt_connect():
     client = MQTTClient(CLIENT_ID, MQTT_URI, user=MQTT_USER, password=MQTT_PASS, keepalive=60000)
-    client.connect()
-    print(f'Connected to MQTT broker @ {MQTT_URI}!')
+    client.set_last_will(STATUS_TOPIC, DISCONNECT_MSG)
+    
+    try:
+        client.connect()
+    except MQTTException as e:
+        print(e)
+    else:
+        print(f'Connected to MQTT broker @ {MQTT_URI}!')
     
     client.set_callback(handle_message)
     
-    for topic in TOPICS:
-        print(f'Subscribing to {topic}...')
+    for topic in SUB_TOPICS:
+        print(f'Subscribed to {topic}...')
         client.subscribe(topic)
     
     return client
