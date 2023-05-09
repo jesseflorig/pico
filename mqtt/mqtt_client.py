@@ -75,18 +75,11 @@ def main():
     except OSError as e:
         reconnect()
     
-    # Setup button interrupt
-    button = Pin(0, Pin.IN, Pin.PULL_UP)
-    button.irq(trigger=Pin.IRQ_FALLING, handler=handle_button)
-    
     while True:
         try:
             client.check_msg()
         except OSError as e:
             reconnect()
-        #msg = json.dumps({ 'on': LED.value() })
-        #client.publish(TOPIC, msg)
-        #time.sleep(5)
         
 if __name__ == "__main__":
     main()
