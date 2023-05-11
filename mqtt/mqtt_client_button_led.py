@@ -81,6 +81,7 @@ def reconnect():
     time.sleep(5)
     machine.reset()
 
+last_time = 0
 def main():
     eth_init()
     
@@ -90,21 +91,25 @@ def main():
         reconnect()
     else:
         client.publish(STATUS_TOPIC, CONNECT_MSG)
+    
+    def debounce(callback):
+        global last_time
+        current_time = time.ticks_ms()
+        if (time.ticks_diff(current_time, last_time) > 500):
+            last_time = current_time
+            callback()
+    
+    def toggle_led():
+        EXT_LED.toggle()
+        
+        if EXT_LED.value() is 0:
+            client.publish(b'pico/light2/', b'{"on": 0}')
+        else:
+            client.publish(b'pico/light2/', b'{"on": 1}')
         
     def handle_button(pin):
-        DEBOUNCE_INTERVAL = 1000
-        last_debounce = 0
-        
-        if ((pin.value() is 0) and (time.ticks_ms()-last_debounce) > DEBOUNCE_INTERVAL):
-            print('Button pressed!')
-            EXT_LED.toggle()
-            
-            if EXT_LED.value() is 0:
-                client.publish(b'pico/light2/', b'{"on": 0}')
-            else:
-                client.publish(b'pico/light2/', b'{"on": 1}')
-            
-            last_debounce=time.ticks_ms()
+        if (pin.value() == 0):
+            debounce(toggle_led)
     
     # Setup button interrupt
     button = Pin(1, Pin.IN, Pin.PULL_UP)

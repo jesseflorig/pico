@@ -81,6 +81,7 @@ def reconnect():
     time.sleep(5)
     machine.reset()
 
+last_time = 0
 def main():
     eth_init()
     
@@ -91,14 +92,19 @@ def main():
     else:
         client.publish(STATUS_TOPIC, CONNECT_MSG)
         
-    def handle_button(pin):
-        DEBOUNCE_INTERVAL = 500
-        last_debounce = 0
+    def debounce(callback):
+        global last_time
+        current_time = time.ticks_ms()
+        if (time.ticks_diff(current_time, last_time) > 500):
+            last_time = current_time
+            callback()
+    
+    def button_press():
+        client.publish(b'pico/button', b'{"press": 1}')
         
-        if ((pin.value() is 0) and (time.ticks_ms()-last_debounce) > DEBOUNCE_INTERVAL):
-            print('Button pressed!')
-            client.publish(b'pico/button', b'{"press": 1}')
-            last_debounce=time.ticks_ms()
+    def handle_button(pin):        
+        if (pin.value() == 0):
+            debounce(button_press)
     
     # Setup button interrupt
     button = Pin(1, Pin.IN, Pin.PULL_UP)
