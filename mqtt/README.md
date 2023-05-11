@@ -19,6 +19,3 @@ As of this writing, all projects have been tested on Wiznet's [W5100S-EVB-Pico](
 
 ## Notes
  - MQTT topics must match exactly (don't forget trailing "/")
-
-## Todo
- - [ ] Improve debounce method (hardware button is not perfect)
