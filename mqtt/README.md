@@ -14,7 +14,7 @@ As of this writing, all projects have been tested on Wiznet's [W5100S-EVB-Pico](
 
  - `mqtt_client`: Base MQTT client using onboard LED
  - `mqtt_client_button_led`: Hardware button (toggles LED and publishes LED state) and LED
- - `mqtt_client_button_pwm`[WIP]: Hardware button and pulse-width modulation (PWM) LED (fade-in/out)
+ - `mqtt_client_button_pwm: Hardware button and pulse-width modulation (PWM) LED (fade-in/out)
  - `mqtt_client_programmable_button_led`: Hardware button (published button press) and LED
 
 ## Notes
