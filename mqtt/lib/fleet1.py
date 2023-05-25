@@ -45,25 +45,25 @@ class Fleet1Client:
         led.value(1)
     
     def mqtt_connect(self):
-        client = MQTTClient(self.client_id, self.mqtt_uri, user=self.user, password=self.pswd, keepalive=self.keepalive)
+        self.client = MQTTClient(self.client_id, self.mqtt_uri, user=self.user, password=self.pswd, keepalive=self.keepalive)
         
         # Establish disconnect message
-        client.set_last_will(self.status_topic, self.disconnect_msg)
+        self.client.set_last_will(self.status_topic, self.disconnect_msg)
         
         try:
-            client.connect()
+            self.client.connect()
         except MQTTException as e:
             print(e)
         else:
             print(f'Connected to MQTT broker @ {self.mqtt_uri}!')
         
-        client.set_callback(self.callback)
+        self.client.set_callback(self.callback)
         
         for topic in self.topics:
             print(f'Subscribed to {topic}...')
-            client.subscribe(topic)
+            self.client.subscribe(topic)
         
-        return client
+        return self.client
 
     def reconnect(self):
         print('Failed to connect to MQTT broker @ {self.mqtt_uri}. Reconnecting...')
