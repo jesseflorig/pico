@@ -33,6 +33,11 @@ SUB_TOPICS = [
     'pico/light2/'
     ]
 
+# BUTTON PRESS
+DEBOUNCE_DELAY = 50
+SINGLE_PRESS = 100
+LONG_PRESS = 800
+
 def eth_init():
     spi = SPI(0, 2_000_000, mosi=MOSI, miso=MISO, sck=SCK)
     nic = network.WIZNET5K(spi, CS, RESET)
@@ -135,6 +140,15 @@ def main():
     def handle_button(pin):
         if (pin.value() == 0):
             debounce(toggle_pwm_led)
+            
+    def single_press():
+        print('!')
+        
+    def double_press():
+        print('!!')
+        
+    def long_press():
+        print('_!_')
     
     # Setup button interrupt
     button = Pin(1, Pin.IN, Pin.PULL_UP)
