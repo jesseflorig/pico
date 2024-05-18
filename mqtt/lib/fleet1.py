@@ -18,7 +18,7 @@ class Fleet1Client:
         self.user = user
         self.pswd = password
         self.topics = topics
-        self.status_topic = f'{client_id}/status'.encode('utf-8')
+        self.status_topic = f'fleet1/{client_id}/status'.encode('utf-8')
         self.connect_msg = b'{"connected": 1}'
         self.disconnect_msg = b'{"connected": 0}'
         self.keepalive = 60000

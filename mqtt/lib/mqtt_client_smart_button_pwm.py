@@ -66,12 +66,12 @@ if __name__ == "__main__":
             global last_on_percent
             if PWM_LED.duty_u16() is not 0:
                 fade_led(0)
-                client.publish(b'pico/light2/', b'{"on": 0}')
+                client.publish(b'fleet1/interior/hall/toeLight', b'{"on": 0}')
             else:
                 fade_led(last_on_percent)
                 msg = json.dumps({ "on" : last_on_percent }).encode('utf-8')
-                client.publish(b'pico/light2/', msg)
-                
+                client.publish(b'', msg)
+                fleet1/interior/hall/toeLight
     def handle_pwm_button(pin):
         if (pin.value() == 0):
             debounce(toggle_pwm_led)
