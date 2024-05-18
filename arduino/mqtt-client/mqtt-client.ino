@@ -30,12 +30,10 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_MQTT_Client mqtt(&ethClient, MQTT_SERVER, MQTT_PORT, CLIENT_ID, USERNAME, PASSWORD);
 
 // Create an MQTT topic instance
-Adafruit_MQTT_Publish publishTopic = Adafruit_MQTT_Publish(&mqtt, "fleet1/feather/status");
-Adafruit_MQTT_Subscribe sub1 = Adafruit_MQTT_Subscribe(&mqtt, "fleet1/interior/hall/test");
-Adafruit_MQTT_Subscribe sub2 = Adafruit_MQTT_Subscribe(&mqtt, "fleet1/interior/hall/overheadLight");
-Adafruit_MQTT_Subscribe sub3 = Adafruit_MQTT_Subscribe(&mqtt, "fleet1/interior/hall/toeLight");
-
-
+Adafruit_MQTT_Publish pubTopic = Adafruit_MQTT_Publish(&mqtt, "fleet1/feather/status");
+Adafruit_MQTT_Subscribe subTopic1 = Adafruit_MQTT_Subscribe(&mqtt, "fleet1/interior/hall/overheadLight");
+Adafruit_MQTT_Subscribe subTopic2 = Adafruit_MQTT_Subscribe(&mqtt, "fleet1/interior/hall/counterLight");
+Adafruit_MQTT_Subscribe subTopic3 = Adafruit_MQTT_Subscribe(&mqtt, "fleet1/interior/hall/toeLight");
 
 void setup() {
   // Initialize
@@ -43,24 +41,26 @@ void setup() {
   initNeoPixel();
   initEthernet();
 
-  // Connect to the broker
-  connectMQTT();
-  
-  mqtt.subscribe(&sub1);
-  mqtt.subscribe(&sub2);
-  mqtt.subscribe(&sub3);
+  Serial.print(F("Subscribing to "));
+  Serial.println(subTopic1.topic);
+  mqtt.subscribe(&subTopic1);
+
+  Serial.print(F("Subscribing to "));
+  Serial.println(subTopic2.topic);
+  mqtt.subscribe(&subTopic2);
+
+  Serial.print(F("Subscribing to "));
+  Serial.println(subTopic3.topic);
+  mqtt.subscribe(&subTopic3);
 }
 
-void loop() {
-  // Ensure the connection to the MQTT broker
-  if (!mqtt.connected()) {
-    reconnectMQTT();
-  }
+void loop() { 
+  // Check connection
+  connectMQTT();
 
   processIncomingMessages();
 
-  // Wait before publishing again
-  delay(100);
+  delay(10);
 }
 
 void initSerial(){
@@ -86,12 +86,13 @@ void setNeoPixel(uint32_t color){
 
 void initEthernet(){
   // Initialize ethernet
-  Serial.println(F("Starting Ethernet..."));
+  Serial.print(F("Finding network... "));
   if (Ethernet.begin(mac) == 0) {
     Serial.println(F("Failed to configure Ethernet using DHCP"));
   }
   delay(1000);
-  Serial.println(F("Ethernet started"));
+  Serial.print(F("joined as "));
+  Serial.println(Ethernet.localIP());
 }
 
 void connectMQTT() {
@@ -102,7 +103,7 @@ void connectMQTT() {
     return;
   }
 
-  Serial.print(F("Connecting to MQTT... "));
+  Serial.print(F("Connecting to MQTT broker... "));
 
   while ((ret = mqtt.connect()) != 0) { // Connect will return 0 for a successful connection
     Serial.println(mqtt.connectErrorString(ret));
@@ -111,44 +112,28 @@ void connectMQTT() {
     delay(5000);  // Wait 5 seconds before retrying
   }
 
-  publishConnectMessage();
-}
-
-void reconnectMQTT() {
-  while (!mqtt.connected()) {
-    Serial.print(F("Connecting to MQTT..."));
-    if (mqtt.connect() == 0) {
-      publishConnectMessage();
-      
-    } else {
-      Serial.println(mqtt.connectErrorString(mqtt.connect()));
-      Serial.println(F("Retrying MQTT connection in 5 seconds..."));
-      delay(5000);
-    }
-  }
-}
-
-void publishConnectMessage(){
-  Serial.println("MQTT Connected!");
+  Serial.print(F("connected to "));
+  Serial.println(MQTT_SERVER);
   setNeoPixel(GREEN);
   char msg[] = "{\"connected\":1}";
-  publishTopic.publish(msg);
+  pubTopic.publish(msg);
 }
 
 void processIncomingMessages() {
   Adafruit_MQTT_Subscribe *subscription;
-  while ((subscription = mqtt.readSubscription(100))) {
-    if (subscription == &sub1) {
-      Serial.print(F("Received 1: "));
-      Serial.println((char *)sub1.lastread);
+  while ((subscription = mqtt.readSubscription(10))) {
+    Serial.print(F("Rec'd "));
+    Serial.print(subscription->topic);
+    Serial.print(F(" -> "));
+    
+    if (subscription == &subTopic1) {
+      Serial.println((char *)subTopic1.lastread);
     }
-    if (subscription == &sub2) {
-      Serial.print(F("Received 2: "));
-      Serial.println((char *)sub2.lastread);
+    if (subscription == &subTopic2) {
+      Serial.println((char *)subTopic2.lastread);
     }
-    if (subscription == &sub3) {
-      Serial.print(F("Received 3: "));
-      Serial.println((char *)sub3.lastread);
+    if (subscription == &subTopic3) {
+      Serial.println((char *)subTopic3.lastread);
     }
   }
 }
