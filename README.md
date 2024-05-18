@@ -1,11 +1,15 @@
-# Pico Projects
+# Pico RP2040 Projects
 
-Assorted projects for Pi Pico development.
+Assorted Pico projects organized by language and function
 
-As of this writing, all projects have been tested on Wiznet's [W5100S-EVB-Pico](https://www.wiznet.io/product-item/w5100s-evb-pico/)
+## Arduino
 
-## Directories
+Arduino projects for the Adafruit Feather RP2040
 
- - `/blink`: Basic blink example
- - `/ethernet`: Examples configuring the Wiznet 5K Series ethernet module
- - `/mqtt`: Examples for MQTT clients
+## CircuitPython
+
+CircuitPython projects for the Adafruit Feather RP2040
+
+## MicroPython
+
+MicroPython projects for the WizNet W5500-EVB-Pico
